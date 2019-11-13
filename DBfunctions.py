@@ -99,7 +99,6 @@ def get_next_day_options():
         sql += f'({menu[0]});'
     else:
         sql += f'{tuple(menu)};'
-    print(sql)
 
     return do_sql(sql)
 
