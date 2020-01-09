@@ -1,10 +1,5 @@
 import math
-
 import numpy as np
-
-from ML.get_user_training_data import get_words
-
-words = ['<PAD>', '<UNK>'] + get_words()
 
 
 class NeuralNetwork:
@@ -13,18 +8,28 @@ class NeuralNetwork:
         self.layers = []
         for i in range(len(self.layer_sizes) - 1):
             self.layers.append(NeuronLayer(self.layer_sizes[i + 1], self.layer_sizes[i]))
-        self.word_embeddings = {key: np.random.random(4) for key in words}
         self.cost = 0
 
     def predict(self, input_array):
-        if type(input_array[0]) == str:
-            input_array = np.hstack((self.name_to_embedding(input_array[0]), input_array[1:]))
+        if len(input_array) != self.layer_sizes[0]:
+            err = f'Your input {input_array} does not match defined input layer size: {self.layer_sizes[0]}'
+            raise ValueError(err)
+        tmp = input_array
         for k in range(len(self.layers)):
-            tmp = self.layers[k].forward(input_array if k == 0 else tmp)
+            print('layer', k)
+            tmp = self.layers[k].forward(tmp)
         return self.layers[-1].out
 
-    def name_to_embedding(self, name):
-        return np.hstack([self.word_embeddings[x] for x in name.split()])
+    def train(self, inputs, expected_output):
+        self.predict(inputs)
+        self.cost = 0
+
+        for i in range(self.layer_sizes[-1]):
+            self.layers[-1].err[i] = self.layers[-1].out[i] - expected_output[i]
+            self.cost += (self.layers[-1].err[i] ** 2) / 2
+
+        for i in range(len(self.layers) - 1, 0, -1):
+            self.layers[i - 1].err = self.layers[i].train(self.layers[i - 1].out)
 
     def inspect(self):
         layer_number = 0
@@ -57,44 +62,18 @@ class NeuralNetwork:
                 print(str(e).rjust(8), end='')
             print(' ')
 
-        print('\nWord embeddings:')
-        for key, value in self.word_embeddings.items():
-            val = ''
-            for x in np.around(value, decimals=2):
-                val += str(x).rjust(7)
-            print(key.rjust(12), val)
-
-    def train(self, inputs, expected_output):
-        name = inputs[0]
-        inputs = np.hstack((self.name_to_embedding(inputs[0]), inputs[1:]))
-        self.predict(inputs)
-        self.cost = 0
-
-        for i in range(self.layer_sizes[-1]):
-            self.layers[-1].err[i] = self.layers[-1].out[i] - expected_output[i]
-            self.cost += (self.layers[-1].err[i] ** 2) / 2
-
-        for i in range(len(self.layers) - 1, 0, -1):
-            self.layers[i - 1].err = self.layers[i].train(self.layers[i - 1].out)
-        embedding_err = self.layers[0].train(inputs)
-        self.update_word_embeddings(embedding_err, name)
-
-    def update_word_embeddings(self, err, dishname):
-        vector_size = 4
-        index = 0
-        for word in dishname.split():
-            for i in range(vector_size):
-                delta = err[index * vector_size + i]
-                self.word_embeddings[word][i] -= delta
-            index += 1
-
 
 class NeuronLayer:
     def __init__(self, size, previous_layer_size):
         self.size = size
         self.pls = previous_layer_size
-        self.w = np.random.random((self.size, self.pls)) * .01
-        self.b = np.random.random(self.size) * .01
+
+        # self.w = np.random.random((self.size, self.pls))
+        # self.b = np.random.random(self.size)
+        # todo remove below lines and uncomment above lines
+        self.w = np.array([[.5, .5, .5]])
+        self.b = np.array([.5])
+
         self.out = [0] * self.size
         self.err = [0] * self.size
         self.learning_rate = .5
