@@ -77,6 +77,7 @@ class NeuronLayer:
         self.out = [0] * self.size
         self.err = [0] * self.size
         self.learning_rate = .5
+        self.activation = 'softplus'
 
     def forward(self, inputs):
         for i in range(self.size):
@@ -86,17 +87,36 @@ class NeuronLayer:
             self.out[i] = self.squash(total)
         return self.out
 
-    @staticmethod
-    def squash(z, activation='sigmoid'):
-        if activation == 'sigmoid':
+    def squash(self, z):
+        if self.activation == 'sigmoid':
             return 1 / (1 + math.exp(-z))
-        elif activation == 'relu':
+        elif self.activation == 'relu':
             return max([0, z])
+        elif self.activation == 'softsign':
+            return z / (1 + abs(z))
+        elif self.activation == 'softplus':
+            return math.log(1 + math.exp(z))
+
+    def get_derivative(self, i):
+        if self.activation == 'sigmoid':
+            return self.out[i] * (1 - self.out[i])
+        elif self.activation == 'relu':
+            # todo de terminat aici
+            return 0 if self.out[i] < 0 else self.out[i]
+        elif self.activation == 'softsign':
+            # todo de terminat aici
+            return 1
+        elif self.activation == 'softplus':
+            # todo de terminat aici
+            return 1
 
     def train(self, inputs):
         return_error = [0] * self.pls
         for i in range(self.size):
-            delta = self.err[i] * self.out[i] * (1 - self.out[i])
+            # the derivative of the activation function of the current layer
+            # derivative = self.out[i] * (1 - self.out[i])
+            derivative = self.get_derivative(i)
+            delta = self.err[i] * derivative
 
             for j in range(self.pls):
                 return_error[j] += delta * self.w[i][j]
