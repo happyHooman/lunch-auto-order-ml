@@ -18,14 +18,18 @@ class NeuralNetwork:
         for k in range(len(self.layers)):
             print('layer', k)
             tmp = self.layers[k].forward(tmp)
-        return self.layers[-1].out
+        # return self.layers[-1].out
+        return self.layers[-1].get_output()
 
     def train(self, inputs, expected_output):
         self.predict(inputs)
+        # todo make sure cost is calculated properly
+        # https://stats.stackexchange.com/questions/154879/a-list-of-cost-functions-used-in-neural-networks-alongside-applications
         self.cost = 0
 
         for i in range(self.layer_sizes[-1]):
             self.layers[-1].err[i] = self.layers[-1].out[i] - expected_output[i]
+            # todo cost is calculated here
             self.cost += (self.layers[-1].err[i] ** 2) / 2
 
         for i in range(len(self.layers) - 1, 0, -1):
@@ -74,18 +78,27 @@ class NeuronLayer:
         self.w = np.array([[.5, .5, .5]])
         self.b = np.array([.5])
 
+        # todo: rename output with total net input
         self.out = [0] * self.size
         self.err = [0] * self.size
         self.learning_rate = .5
-        self.activation = 'softplus'
+        self.activation = 'relu'
 
     def forward(self, inputs):
         for i in range(self.size):
             total = self.b[i]
             for j in range(self.pls):
                 total += inputs[j] * self.w[i][j]
-            self.out[i] = self.squash(total)
-        return self.out
+            # self.out[i] = self.squash(total)
+            self.out[i] = total
+        # return self.out
+        return self.get_output()
+
+    def get_output(self):
+        out = []
+        for o in self.out:
+            out.append(self.squash(o))
+        return out
 
     def squash(self, z):
         if self.activation == 'sigmoid':
@@ -96,9 +109,13 @@ class NeuronLayer:
             return z / (1 + abs(z))
         elif self.activation == 'softplus':
             return math.log(1 + math.exp(z))
+        else:
+            m = f'{self.activation} not a valid activation function'
+            raise ValueError(m)
 
     def get_derivative(self, i):
         if self.activation == 'sigmoid':
+            # todo de corectat si aici
             return self.out[i] * (1 - self.out[i])
         elif self.activation == 'relu':
             # todo de terminat aici
