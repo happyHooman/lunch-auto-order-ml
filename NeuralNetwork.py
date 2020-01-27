@@ -68,7 +68,7 @@ class NeuralNetwork:
 
 
 class NeuronLayer:
-    def __init__(self, size, previous_layer_size):
+    def __init__(self, size, previous_layer_size, activation='sigmoid'):
         self.size = size
         self.pls = previous_layer_size
 
@@ -82,16 +82,14 @@ class NeuronLayer:
         self.out = [0] * self.size
         self.err = [0] * self.size
         self.learning_rate = .5
-        self.activation = 'relu'
+        self.activation = activation
 
     def forward(self, inputs):
         for i in range(self.size):
             total = self.b[i]
             for j in range(self.pls):
                 total += inputs[j] * self.w[i][j]
-            # self.out[i] = self.squash(total)
             self.out[i] = total
-        # return self.out
         return self.get_output()
 
     def get_output(self):
@@ -100,44 +98,42 @@ class NeuronLayer:
             out.append(self.squash(o))
         return out
 
-    def squash(self, z):
+    def squash(self, x):
         if self.activation == 'sigmoid':
-            return 1 / (1 + math.exp(-z))
+            return 1 / (1 + math.exp(-x))
         elif self.activation == 'relu':
-            return max([0, z])
+            return max([0, x])
         elif self.activation == 'softsign':
-            return z / (1 + abs(z))
+            return x / (1 + abs(x))
         elif self.activation == 'softplus':
-            return math.log(1 + math.exp(z))
+            return math.log(1 + math.exp(x))
         else:
-            m = f'{self.activation} not a valid activation function'
-            raise ValueError(m)
+            raise ValueError('Not a valid activation function')
 
     def get_derivative(self, i):
+        # https://en.wikipedia.org/wiki/Activation_function
+        out = self.out
         if self.activation == 'sigmoid':
-            # todo de corectat si aici
-            return self.out[i] * (1 - self.out[i])
+            sig = self.get_output()
+            return sig[i] * (1 - sig[i])
         elif self.activation == 'relu':
-            # todo de terminat aici
-            return 0 if self.out[i] < 0 else self.out[i]
+            return 0 if out[i] <= 0 else out[i]
         elif self.activation == 'softsign':
             # todo de terminat aici
             return 1
         elif self.activation == 'softplus':
-            # todo de terminat aici
-            return 1
+            return 1 / (1 + math.exp(-out[i]))
 
     def train(self, inputs):
-        return_error = [0] * self.pls
+        previous_layer_error = [0] * self.pls
         for i in range(self.size):
             # the derivative of the activation function of the current layer
-            # derivative = self.out[i] * (1 - self.out[i])
             derivative = self.get_derivative(i)
             delta = self.err[i] * derivative
 
             for j in range(self.pls):
-                return_error[j] += delta * self.w[i][j]
+                previous_layer_error[j] += delta * self.w[i][j]
                 self.w[i][j] -= delta * inputs[j] * self.learning_rate
 
             self.b[i] -= delta * self.learning_rate
-        return return_error
+        return previous_layer_error
