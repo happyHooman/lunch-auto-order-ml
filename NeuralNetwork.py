@@ -6,10 +6,11 @@ class NeuralNetwork:
     def __init__(self, layer_sizes):
         self.layer_sizes = layer_sizes
         self.layers = []
-        www = [[[0, 0], [0, 0]],
-               [[0, 0], [0, 0]]]
-        bbb = [[0, 0],
-               [0, 0]]
+        # todo remove predefined weights and bias
+        www = [[[.15, .2], [.25, .3]],
+               [[.4, .45], [.5, .55]]]
+        bbb = [[.35, .35],
+               [.6, .6]]
         for i in range(len(self.layer_sizes) - 1):
             self.layers.append(NeuronLayer(self.layer_sizes[i + 1], self.layer_sizes[i], www[i], bbb[i]))
         self.cost = 0
@@ -19,7 +20,6 @@ class NeuralNetwork:
             raise ValueError('Your input does not match defined input layer size.')
         tmp = input_array
         for k in range(len(self.layers)):
-            print('layer', k)
             tmp = self.layers[k].forward(tmp)
         return self.layers[-1].get_output()
 
@@ -29,7 +29,7 @@ class NeuralNetwork:
         # https://stats.stackexchange.com/questions/154879/a-list-of-cost-functions-used-in-neural-networks-alongside-applications
         self.cost = 0
 
-        # todo: rename output with total net input
+        # todo: save separately the output and total net input
         for i in range(self.layer_sizes[-1]):
             self.layers[-1].err[i] = self.layers[-1].total_net_input[i] - expected_output[i]
             # todo cost is calculated here
@@ -40,9 +40,11 @@ class NeuralNetwork:
 
     def inspect(self):
         layer_number = 0
+
+        print('\n\nCost:', self.cost)
         for layer in self.layers:
             layer_number += 1
-            print('\n\nLayer', layer_number)
+            print('\nLayer', layer_number)
             print('=' * 142)
             print(" ".ljust(8), end='')
             for k in range(len(layer.b)):
@@ -75,11 +77,9 @@ class NeuronLayer:
         self.size = size
         self.pls = previous_layer_size
 
-        # self.w = np.random.random((self.size, self.pls))
-        # self.b = np.random.random(self.size)
-        # todo remove below lines and uncomment above lines
-        self.w = weights
-        self.b = bias
+        # todo remove predifined wigths and bias
+        self.w = weights or np.random.random((self.size, self.pls))
+        self.b = bias or np.random.random(self.size)
 
         self.total_net_input = [0] * self.size
         self.err = [0] * self.size
