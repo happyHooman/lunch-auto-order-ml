@@ -6,13 +6,8 @@ class NeuralNetwork:
     def __init__(self, layer_sizes):
         self.layer_sizes = layer_sizes
         self.layers = []
-        # todo remove predefined weights and bias
-        www = [[[.15, .2], [.25, .3]],
-               [[.4, .45], [.5, .55]]]
-        bbb = [[.35, .35],
-               [.6, .6]]
         for i in range(len(self.layer_sizes) - 1):
-            self.layers.append(NeuronLayer(self.layer_sizes[i + 1], self.layer_sizes[i], www[i], bbb[i]))
+            self.layers.append(NeuronLayer(self.layer_sizes[i + 1], self.layer_sizes[i]))
         self.cost = 0
 
     def predict(self, input_array):
@@ -21,22 +16,24 @@ class NeuralNetwork:
         tmp = input_array
         for k in range(len(self.layers)):
             tmp = self.layers[k].forward(tmp)
-        return self.layers[-1].get_output()
+        return self.layers[-1].output
+
+    def calculate_cost(self, expected_output):
+        self.cost = 0
+        for i in range(self.layer_sizes[-1]):
+            self.layers[-1].err[i] = self.layers[-1].output[i] - expected_output[i]
+            self.cost += (self.layers[-1].err[i] ** 2) / 2
 
     def train(self, inputs, expected_output):
         self.predict(inputs)
-        # todo make sure cost is calculated properly
-        # https://stats.stackexchange.com/questions/154879/a-list-of-cost-functions-used-in-neural-networks-alongside-applications
-        self.cost = 0
+        self.calculate_cost(expected_output)
 
-        # todo: save separately the output and total net input
-        for i in range(self.layer_sizes[-1]):
-            self.layers[-1].err[i] = self.layers[-1].total_net_input[i] - expected_output[i]
-            # todo cost is calculated here
-            self.cost += (self.layers[-1].err[i] ** 2) / 2
-
+        # from last layer to second layer update weights and biases
         for i in range(len(self.layers) - 1, 0, -1):
-            self.layers[i - 1].err = self.layers[i].train(self.layers[i - 1].total_net_input)
+            self.layers[i - 1].err = self.layers[i].train(self.layers[i - 1].output)
+        # update weights and biases in the first layer
+        feedback_err = self.layers[0].train(inputs)
+        return feedback_err
 
     def inspect(self):
         layer_number = 0
@@ -51,37 +48,35 @@ class NeuralNetwork:
                 print(str(k).rjust(8), end='')
 
             print('\nbiases:'.ljust(9), end='')
-            for b in np.around(layer.b, decimals=2):
+            for b in np.around(layer.b, decimals=4):
                 print(str(b).rjust(8), end='')
 
             print('\n\nneurons:', end='')
             k = 0
             for n in np.transpose(layer.w):
                 k += 1
-                for p in np.around(n, decimals=2):
+                for p in np.around(n, decimals=4):
                     print(str(p).rjust(8), end='')
                 print(f'\n{k}'.ljust(9), end='')
             print(' ', end='\r')
             print(' ')
             print('output:'.ljust(8), end='')
-            for o in np.around(layer.total_net_input, decimals=2):
+            for o in np.around(layer.output, decimals=4):
                 print(str(o).rjust(8), end='')
             print('\n\nerror:'.ljust(10), end='')
-            for e in np.around(layer.err, decimals=2):
+            for e in np.around(layer.err, decimals=4):
                 print(str(e).rjust(8), end='')
             print(' ')
 
 
 class NeuronLayer:
-    def __init__(self, size, previous_layer_size, weights, bias, activation='sigmoid'):
+    def __init__(self, size, previous_layer_size, activation='softplus'):
         self.size = size
         self.pls = previous_layer_size
-
-        # todo remove predifined wigths and bias
-        self.w = weights or np.random.random((self.size, self.pls))
-        self.b = bias or np.random.random(self.size)
-
+        self.w = np.random.random((self.size, self.pls))
+        self.b = np.random.random(self.size)
         self.total_net_input = [0] * self.size
+        self.output = [0] * self.size
         self.err = [0] * self.size
         self.learning_rate = .5
         self.activation = activation
@@ -95,7 +90,8 @@ class NeuronLayer:
         return self.get_output()
 
     def get_output(self):
-        return [self.squash(o) for o in self.total_net_input]
+        self.output = [self.squash(o) for o in self.total_net_input]
+        return self.output
 
     def squash(self, z):
         """Squash the total net input"""
@@ -111,11 +107,11 @@ class NeuronLayer:
             raise ValueError('Not a valid activation function')
 
     def get_derivative(self, i):
-        """Returns the derivative of the output in respect to total net input"""
+        """Returns the derivative of the squash function"""
         tni = self.total_net_input
         if self.activation == 'sigmoid':
-            sig = self.get_output()
-            return sig[i] * (1 - sig[i])
+            out = self.output
+            return out[i] * (1 - out[i])
         elif self.activation == 'relu':
             return 0 if tni[i] <= 0 else tni[i]
         elif self.activation == 'softsign':
@@ -124,7 +120,7 @@ class NeuronLayer:
             return 1 / (1 + math.exp(-tni[i]))
 
     def train(self, inputs):
-        """Backpropagation"""
+        """Back propagation"""
         previous_layer_error = [0] * self.pls
         for i in range(self.size):
             delta = self.err[i] * self.get_derivative(i)
@@ -132,6 +128,5 @@ class NeuronLayer:
             for j in range(self.pls):
                 previous_layer_error[j] += delta * self.w[i][j]
                 self.w[i][j] -= delta * inputs[j] * self.learning_rate
-
             self.b[i] -= delta * self.learning_rate
         return previous_layer_error
