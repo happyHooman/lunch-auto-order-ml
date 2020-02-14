@@ -2,7 +2,7 @@ import math
 
 import numpy as np
 
-from ML.get_user_training_data import get_words
+from DB.get_user_training_data import get_words
 
 words = ['<PAD>', '<UNK>'] + get_words()
 

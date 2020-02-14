@@ -1,5 +1,5 @@
 import pickle
-from ML.get_user_training_data import get_available_menus
+from DB.get_user_training_data import get_available_menus
 from ML.trainer import parent_directory
 from common import setup_logger
 

@@ -1,6 +1,6 @@
 import string
 
-from ML.DBfunctions import get_words, get_words_dictionary
+from DB.DBfunctions import get_words, get_words_dictionary
 
 
 def format_dish_names(dishes):

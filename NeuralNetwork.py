@@ -28,7 +28,7 @@ class NeuralNetwork:
         self.predict(inputs)
         self.calculate_cost(expected_output)
 
-        # from last layer to second layer update weights and biases
+        # from the last to the second layer update weights and biases
         for i in range(len(self.layers) - 1, 0, -1):
             self.layers[i - 1].err = self.layers[i].train(self.layers[i - 1].output)
         # update weights and biases in the first layer

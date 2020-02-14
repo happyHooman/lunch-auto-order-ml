@@ -4,8 +4,8 @@ import time
 import numpy as np
 
 from ML.NeuralNetwork_old import NeuralNetwork
-from ML.get_user_training_data import get_training_data
-from ML.DBfunctions import add_log
+from DB.get_user_training_data import get_training_data
+from DB.DBfunctions import add_log
 from common import parent_directory, TRAINING_MODES, setup_logger
 
 
