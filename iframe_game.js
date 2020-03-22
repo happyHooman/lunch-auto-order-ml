@@ -106,7 +106,7 @@ w.Units.prototype.replace = function (step) {
     return changed;
 };
 
-w.Units.prototype.cost = function () {
+w.Units.prototype.salary = function () {
     const salary = [.1, .4, .6, .7, .9, 6.9, .1, 3.9];
     let c = 0;
     for (let i = 0; i < 8; i++) {
@@ -117,7 +117,7 @@ w.Units.prototype.cost = function () {
 
 w.Units.prototype.optimize = function (step = 1000) {
     this.maxUnits = [...this.qq];
-    console.log('initial cost', this.cost());
+    console.log('initial salary', this.salary());
     w.rashet();
 
     let changed;
@@ -130,7 +130,7 @@ w.Units.prototype.optimize = function (step = 1000) {
     this.reduce(step);
 
 
-    console.log('final cost', this.cost());
+    console.log('final salary', this.salary());
 };
 
 function op() {
