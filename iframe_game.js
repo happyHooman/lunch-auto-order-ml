@@ -21,7 +21,7 @@ w.Units.prototype.reduceUnit = function (i, step) {
 };
 
 w.Units.prototype.reduce = function (step) {
-    console.log('reduce')
+    console.log('reduce');
     let changed = false;
     for (let i = 5; i > 0; i--) {
         changed = this.reduceUnit(i, step) || changed;
@@ -30,6 +30,7 @@ w.Units.prototype.reduce = function (step) {
 };
 
 w.Units.prototype.roundUnits = function (step, down = true) {
+    console.log('round');
     let changed = false;
     for (let i = 1; i < 8; i++) {
         if (this.qq[i] % step !== 0) {
@@ -58,8 +59,7 @@ w.Units.prototype.roundUnits = function (step, down = true) {
 w.Units.prototype.replaceUnits = function (first, second, step) {
     const salary = [.2, .8, 1.2, 1.4, 1.8, 12.2, .2, 7.8];
     const before = [this.qq[first], this.qq[second]];
-    let initial;
-    let leftRevivals;
+    let initial, leftRevivals;
 
     do {
         if (this.qq[second] === this.maxUnits[second] || this.qq[first] === 0) return false;
@@ -69,7 +69,7 @@ w.Units.prototype.replaceUnits = function (first, second, step) {
         initial = [this.qq[first], this.qq[second]];
         let first_units_number = this.qq[first] - step;
         let second_units_number = this.qq[second] + Math.floor(step * salary[first] / salary[second]);
-        console.log(`-${first_units_number} from ${first}, +${second_units_number} to ${second}`);
+        console.log(`${first_units_number} to ${first}\n${second_units_number} to ${second}`);
 
         if (second_units_number > this.maxUnits[second]) {
             console.log('second units to max');
@@ -85,7 +85,6 @@ w.Units.prototype.replaceUnits = function (first, second, step) {
 
     if (this.xxx < leftRevivals) {
         console.log('revert last');
-        console.log(this.xxx, '<', leftRevivals);
         this.update_number(first, initial[0]);
         this.update_number(second, initial[1]);
     }
@@ -107,7 +106,7 @@ w.Units.prototype.replace = function (step) {
 };
 
 w.Units.prototype.salary = function () {
-    const salary = [.1, .4, .6, .7, .9, 6.9, .1, 3.9];
+    const salary = [.2, .8, 1.2, 1.4, 1.8, 12.2, .2, 7.8];
     let c = 0;
     for (let i = 0; i < 8; i++) {
         c += this.qq[i] * salary[i];
@@ -117,18 +116,21 @@ w.Units.prototype.salary = function () {
 
 w.Units.prototype.optimize = function (step = 1000) {
     this.maxUnits = [...this.qq];
-    console.log('initial salary', this.salary());
+    let new_salary = this.salary();
+    console.log('initial salary', new_salary);
     w.rashet();
 
-    let changed;
+    let old_salary, changed;
     do {
+        old_salary = new_salary;
         const reduced = this.reduce(step);
         const replaced = this.replace(step);
         const rounded = this.roundUnits(step, false);
         changed = reduced || replaced || rounded;
-    } while (!changed);
+        new_salary = this.salary();
+        console.log('salary', new_salary);
+    } while (changed && new_salary + 1000 < old_salary);
     this.reduce(step);
-
 
     console.log('final salary', this.salary());
 };
